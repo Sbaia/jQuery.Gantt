@@ -29,11 +29,11 @@
 
         $.extend($.expr[":"], {
             findday: function (a, i, m) {
-                var cd = new Date(parseInt(m[3],10));
+                var cd = new Date(parseInt(m[3], 10));
                 var id = $(a).attr("id");
                 id = id ? id : "";
                 var si = id.indexOf("-") + 1;
-                var ed = new Date(parseInt(id.substring(si, id.length),10));
+                var ed = new Date(parseInt(id.substring(si, id.length), 10));
                 cd = new Date(cd.getFullYear(), cd.getMonth(), cd.getDate());
                 ed = new Date(ed.getFullYear(), ed.getMonth(), ed.getDate());
                 return cd.getTime() === ed.getTime();
@@ -42,7 +42,7 @@
 
         $.extend($.expr[":"], {
             findweek: function (a, i, m) {
-                var cd = new Date(parseInt(m[3],10));
+                var cd = new Date(parseInt(m[3], 10));
                 var id = $(a).attr("id");
                 id = id ? id : "";
                 var si = id.indexOf("-") + 1;
@@ -54,7 +54,7 @@
 
         $.extend($.expr[":"], {
             findmonth: function (a, i, m) {
-                var cd = new Date(parseInt(m[3],10));
+                var cd = new Date(parseInt(m[3], 10));
                 cd = cd.getFullYear() + "-" + cd.getMonth();
                 var id = $(a).attr("id");
                 id = id ? id : "";
@@ -158,7 +158,7 @@
                     element.data = settings.source;
                     core.init(element);
                 } else {
-                    $.getJSON(settings.source, function (jsData) {
+                    $.getJSON(settings.source, settings.postData, function (jsData) {
                         element.data = jsData;
                         core.init(element);
                     });
@@ -192,7 +192,7 @@
 
                 $(element).html(element.gantt);
 
-                element.scrollNavigation.panelMargin = parseInt($dataPanel.css("margin-left").replace("px", ""),10);
+                element.scrollNavigation.panelMargin = parseInt($dataPanel.css("margin-left").replace("px", ""), 10);
                 element.scrollNavigation.panelMaxPos = ($dataPanel.width() - $rightPanel.width());
 
                 element.scrollNavigation.canScroll = ($dataPanel.width() > $rightPanel.width());
@@ -286,7 +286,33 @@
                 } else if (document.addEventListener) {
                     element.addEventListener(mousewheelevt, function (e) { core.wheelScroll(element, e); }, false);
                 }
+                /*
+                * Dragging datapanel 
+                */
 
+                dataPanel.mousedown(function (e) {
+                    if (e.which != 1)
+                        return true;
+                    if (e.preventDefault) e.preventDefault();
+                    element.scrollNavigation.panelMouseDown = true;
+                    core.mouseScroll(element, e);
+                })
+					.mousemove(function (e) {
+					    if (element.scrollNavigation.panelMouseDown) {
+					        core.mouseScroll(element, e);
+					    }
+					});
+
+                $(document).mouseup(function (e) {
+                    if (e.which != 1)
+                        return true;
+                    element.scrollNavigation.panelMouseDown = false;
+                    element.scrollNavigation.mouseX = null;
+                    var $dataPanel = $(element).find('.fn-gantt .dataPanel');
+                    $dataPanel.css("cursor", "auto");
+
+                    core.repositionLabel(element);
+                });
 
                 // addNEwClick
                 dataPanel.click(function (e) {
@@ -365,7 +391,7 @@
                 var holidays = settings.holidays ? settings.holidays.join() : '';
 
                 switch (settings.scale) {
-                    // hours /////////////////////////////////////////////////////////////////////////////////////////
+                    // hours /////////////////////////////////////////////////////////////////////////////////////////    
                     case "hours":
 
                         range = tools.parseTimeRange(element.dateStart, element.dateEnd, element.scaleStep);
@@ -490,7 +516,7 @@
 
                         break;
 
-                    // weeks /////////////////////////////////////////////////////////////////////////////////////////
+                    // weeks /////////////////////////////////////////////////////////////////////////////////////////    
                     case "weeks":
                         range = tools.parseWeeksRange(element.dateStart, element.dateEnd);
                         yearArr = ['<div class="row"/>'];
@@ -563,7 +589,7 @@
 
 
                         break;
-                    // months ////////////////////////////////////////////////////////////////////////////////////////
+                    // months ////////////////////////////////////////////////////////////////////////////////////////    
                     case 'months':
                         range = tools.parseMonthsRange(element.dateStart, element.dateEnd);
 
@@ -622,7 +648,7 @@
 
 
                         break;
-                    // days //////////////////////////////////////////////////////////////////////////////////////////
+                    // days //////////////////////////////////////////////////////////////////////////////////////////    
                     default:
                         range = tools.parseDateRange(element.dateStart, element.dateEnd);
 
@@ -788,7 +814,7 @@
                                             core.navigateTo(element, tools.getCellSize() * -7);
                                         } else if (settings.scale === 'weeks') {
                                             core.navigateTo(element, tools.getCellSize() * -4);
-                                        } else  if (settings.scale === 'months') {
+                                        } else if (settings.scale === 'months') {
                                             core.navigateTo(element, tools.getCellSize() * -3);
                                         }
                                     }))
@@ -884,13 +910,14 @@
                 }
                 return $('<div class="bottom"/>').append(ganttNavigate);
             },
-            createProgressBar: function (days, cls, desc, label, dataObj) {
+            createProgressBar: function (days, cls, desc, label, dataObj, bgColor) {
                 var cellWidth = tools.getCellSize();
                 var barMarg = tools.getProgressBarMargin() || 0;
                 var bar = $('<div class="bar"><div class="fn-label">' + label + '</div></div>')
                         .addClass(cls)
                         .css({
-                            width: ((cellWidth * days) - barMarg) + 5
+                            width: ((cellWidth * days) - barMarg) + 5,
+                            'background-color': bgColor
                         })
                         .data("dataObj", dataObj);
 
@@ -940,9 +967,9 @@
                     try {
                         colStr = colStr.replace("rgb(", "").replace(")", "");
                         var rgbArr = colStr.split(",");
-                        var R = parseInt(rgbArr[0],10);
-                        var G = parseInt(rgbArr[1],10);
-                        var B = parseInt(rgbArr[2],10);
+                        var R = parseInt(rgbArr[0], 10);
+                        var G = parseInt(rgbArr[1], 10);
+                        var B = parseInt(rgbArr[2], 10);
                         var gray = Math.round((255 - (0.299 * R + 0.587 * G + 0.114 * B)) * 0.9, 1);
                         return "rgb(" + gray + ", " + gray + ", " + gray + ")";
                     } catch (err) {
@@ -973,13 +1000,14 @@
                                                 day.customClass ? day.customClass : "",
                                                 day.desc ? day.desc : "",
                                                 day.label ? day.label : "",
-                                                day.dataObj ? day.dataObj : null
+                                                day.dataObj ? day.dataObj : null,
+                                                day.color ? day.color : ""
                                             );
 
                                     // find row
                                     var topEl = $(element).find("#rowheader" + i);
 
-                                    var top = tools.getCellSize() * 5 + 2 + parseInt(topEl.attr("offset"),10);
+                                    var top = tools.getCellSize() * 5 + 2 + parseInt(topEl.attr("offset"), 10);
                                     _bar.css({ 'margin-top': top, 'margin-left': Math.floor(cFrom) });
 
                                     datapanel.append(_bar);
@@ -1014,13 +1042,14 @@
                                              day.customClass ? day.customClass : "",
                                              day.desc ? day.desc : "",
                                              day.label ? day.label : "",
-                                            day.dataObj ? day.dataObj : null
+                                            day.dataObj ? day.dataObj : null,
+                                            day.color ? day.color : ""
                                         );
 
                                     // find row
                                     var topEl = $(element).find("#rowheader" + i);
 
-                                    var top = tools.getCellSize() * 3 + 2 + parseInt(topEl.attr("offset"),10);
+                                    var top = tools.getCellSize() * 3 + 2 + parseInt(topEl.attr("offset"), 10);
                                     _bar.css({ 'margin-top': top, 'margin-left': Math.floor(cFrom) });
 
                                     datapanel.append(_bar);
@@ -1053,19 +1082,20 @@
                                         day.customClass ? day.customClass : "",
                                         day.desc ? day.desc : "",
                                         day.label ? day.label : "",
-                                        day.dataObj ? day.dataObj : null
+                                        day.dataObj ? day.dataObj : null,
+                                        day.color ? day.color : ""
                                     );
 
                                     // find row
                                     var topEl = $(element).find("#rowheader" + i);
 
-                                    var top = tools.getCellSize() * 2 + 2 + parseInt(topEl.attr("offset"),10);
+                                    var top = tools.getCellSize() * 2 + 2 + parseInt(topEl.attr("offset"), 10);
                                     _bar.css({ 'margin-top': top, 'margin-left': Math.floor(cFrom) });
 
                                     datapanel.append(_bar);
                                     break;
 
-                                // Days
+                                // Days    
                                 default:
                                     var dFrom = tools.genId(tools.dateDeserialize(day.from).getTime());
                                     var dTo = tools.genId(tools.dateDeserialize(day.to).getTime());
@@ -1079,13 +1109,14 @@
                                                 day.customClass ? day.customClass : "",
                                                 day.desc ? day.desc : "",
                                                 day.label ? day.label : "",
-                                                day.dataObj ? day.dataObj : null
+                                                day.dataObj ? day.dataObj : null,
+                                                day.color ? day.color : ""
                                         );
 
                                     // find row
                                     var topEl = $(element).find("#rowheader" + i);
 
-                                    var top = tools.getCellSize() * 4 + 2 + parseInt(topEl.attr("offset"),10);
+                                    var top = tools.getCellSize() * 4 + 2 + parseInt(topEl.attr("offset"), 10);
                                     _bar.css({ 'margin-top': top, 'margin-left': Math.floor(cFrom) });
 
                                     datapanel.append(_bar);
@@ -1149,7 +1180,7 @@
                     default:
                         var max_left = (dataPanelWidth - rightPanelWidth) * -1;
                         var cur_marg = $dataPanel.css("margin-left").replace("px", "");
-                        var val = parseInt(cur_marg,10) + val;
+                        var val = parseInt(cur_marg, 10) + val;
                         if (val <= 0 && val >= max_left) {
                             $dataPanel.animate({
                                 "margin-left": val + "px"
@@ -1293,7 +1324,7 @@
                 if (!element.scrollNavigation.canScroll) {
                     return false;
                 }
-                var _panelMargin = parseInt(element.scrollNavigation.panelMargin,10) + delta;
+                var _panelMargin = parseInt(element.scrollNavigation.panelMargin, 10) + delta;
                 if (_panelMargin > 0) {
                     element.scrollNavigation.panelMargin = 0;
                     $(element).find(".fn-gantt .dataPanel").css("margin-left", element.scrollNavigation.panelMargin + "px");
@@ -1492,8 +1523,15 @@
             },
             dateDeserialize: function (dateStr) {
                 //return eval("new" + dateStr.replace(/\//g, " "));
-                var date = eval("new" + dateStr.replace(/\//g, " "));
-                return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes());
+                var date = dateStr.replace(/\//g, " ");
+                var utcDateTime = Number(date.substr(date.indexOf("(") + 1, 13));
+                var utcZone = 0;
+                if (date.indexOf('-') >= 0)
+                    utcZone = Number(date.substr(date.indexOf("-") + 1, 4));
+                if (date.indexOf('+') >= 0)
+                    utcZone = Number(date.substr(date.indexOf("+") + 1, 4));
+                var utcDate = new Date(utcDateTime - (utcZone));
+                return new Date(utcDate.getUTCFullYear(), utcDate.getUTCMonth(), utcDate.getUTCDate(), utcDate.getUTCHours(), utcDate.getUTCMinutes());
             },
 
 
@@ -1549,8 +1587,8 @@
                     $("body").append(
                         $('<div style="display: none; position: absolute;" id="measureBarWidth" ><div class="fn-gantt"><div class="rightPanel"><div class="dataPanel"><div class="row day"><div class="bar" /></div></div></div></div></div>')
                     );
-                    tools._getProgressBarMargin = parseInt($("#measureBarWidth .fn-gantt .rightPanel .day .bar").css("margin-left").replace("px", ""),10);
-                    tools._getProgressBarMargin += parseInt($("#measureBarWidth .fn-gantt .rightPanel .day .bar").css("margin-right").replace("px", ""),10);
+                    tools._getProgressBarMargin = parseInt($("#measureBarWidth .fn-gantt .rightPanel .day .bar").css("margin-left").replace("px", ""), 10);
+                    tools._getProgressBarMargin += parseInt($("#measureBarWidth .fn-gantt .rightPanel .day .bar").css("margin-right").replace("px", ""), 10);
                     $("#measureBarWidth").empty().remove();
                 }
                 return tools._getProgressBarMargin;
